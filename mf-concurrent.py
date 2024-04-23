@@ -617,25 +617,6 @@ results = []
 use_wandb = False
 config = {'optim':'adam'}
 config.update({'debiasing':args.debiasing, 'lr':args.lr, 'reg':args.reg, 'dim':args.dim})
-# # best hyperparams set for Yahoo and method MF
-# config.update({'debiasing':'none', 'lr':1e-4, 'reg':1e-4, 'dim':128})
-# config.update({'debiasing':'popularity', 'lr':1e-5, 'reg':1e-4, 'dim':64})
-# config.update({'debiasing':'positivity', 'lr':1e-4, 'reg':1e-4, 'dim':16})
-# config.update({'debiasing':'pop_pos', 'lr':1e-5, 'reg':1e-4, 'dim':32}) 
-# config.update({'debiasing':'mf', 'lr':1e-5, 'reg':1e-4, 'dim':64}) 
-# # best hyperparams set for Coat and method MF
-# config.update({'debiasing':'none', 'lr':1e-4, 'reg':1e-7, 'dim':16})
-# config.update({'debiasing':'popularity', 'lr':1e-4, 'reg':1e-3, 'dim':64})
-# config.update({'debiasing':'positivity', 'lr':1e-5, 'reg':1e-5, 'dim':128})
-# config.update({'debiasing':'pop_pos', 'lr':1e-4, 'reg':1e-3, 'dim':128})
-# config.update({'debiasing':'mf', 'lr':1e-4, 'reg':1e-3, 'dim':128})
-# # best hyperparams set for Coat and method VAE
-# config.update({'debiasing':'none', 'lr':1e-5, 'reg':1e-3})
-# # best hyperparams set for Yahoo and method VAE
-# config.update({'debiasing':'none', 'lr':1e-5, 'reg':1e-7})
-# config.update({'debiasing':'positivity', 'lr':1e-5, 'reg':1e-3})
-# config.update({'debiasing':'pop_pos', 'lr':1e-5, 'reg':1e-3})
-# config.update({'debiasing':'mf', 'lr':1e-5, 'reg':1e-3})
 
 config['plot'] = False # default False
 if config.get('plot', False):
@@ -655,10 +636,6 @@ trainset, validset = trainsets[0], validsets[0]
 if config.get("train_on_testusers_only", False):
     test_users = testset['user_id'].unique()
     trainset, validset = trainsets[0][trainsets[0]['user_id'].isin(test_users)], validsets[0][validsets[0]['user_id'].isin(test_users)]
-# print(len(test_users), trainset['user_id'].nunique(), validset['user_id'].nunique(), testset['user_id'].nunique())
-# print(trainset['item_id'].nunique(), validset['item_id'].nunique(), testset['item_id'].nunique())
-# print(len(trainset), len(validset), len(testset), len(MCAR))
-# exit(0)
 p_O_Y, p_Y, p_Y_O, p_O = get_positivity_bias(MCAR, pd.concat([trainset, validset], ignore_index=True))
 item_prob = get_popularity_bias(pd.concat([trainset, validset], ignore_index=True))
 if dataset_name == 'yahoo':
@@ -671,10 +648,6 @@ elif dataset_name == 'kuairec':
     alpha = (5, 5)
     clip = (1e-3, 0.1)
 p_O_IY = get_pos_pop_bias_updated(MCAR, pd.concat([trainset, validset], ignore_index=True), clip=clip, alpha=alpha)
-# GT = pd.concat([MCAR, testset], axis=0, ignore_index=True)
-# GT_p_O_IY, GT_p_IY_O, GT_p_IY = get_GT_P_O_IY(pd.concat([trainset, validset], ignore_index=True), GT)
-# p_O_IY = GT_p_O_IY
-# print("!!!!!!!!!!!!!!! Attention: Using the GT (MCAR+testset) to learn p_O_IY. Just for checking.") # @Here
 
 if use_wandb:
     # start a new wandb run to track this script
@@ -700,122 +673,3 @@ print("The avg results on testset for", results[0].keys(), " are", s)
 
 if use_wandb:
     wandb.finish()
-
-
-# # avg-baseline
-# def avg_baselines(trainset, validset, testset):
-#     trainset = pd.concat([trainset, validset], ignore_index=True)
-#     testset_ = testset.copy()
-#     testset_ = testset_.reset_index(drop=True) # avoid the old index being added as a column
-#     # Avg baseline
-#     item_avgR = trainset.groupby(by='item_id')['rating'].mean()
-#     preds = item_avgR.loc[testset_['item_id'].values].values
-#     ndcgs = []
-#     for u, group in testset_.groupby(by='user_id'):
-#         if len(group) == 1:
-#             continue
-#         ndcgs.append(ndcg_score([group['rating'].values], [preds[group.index]], k=10))
-#     print(mean_squared_error(preds, testset_['rating'], squared=False), mean_squared_error(preds, testset_['rating']), mean_absolute_error(preds, testset_['rating']),eval_RMSE_per_group(preds, testset_), np.mean(ndcgs))
-
-#     # Propensity_weighted Avg, positivity bias
-#     item_avgR_debiased = np.zeros(num_items, dtype=np.float32)
-#     inversed_p_O_Y = np.reciprocal(np.array(p_O_Y))
-#     inversed_p_O_Y /= inversed_p_O_Y.sum()
-#     for item, group in trainset.groupby(by="item_id"):
-#         ratings_i = group['rating'].values
-#         # way-1:
-#         # p_rating_i = np.array([sum(ratings_i == x) for x in range(1, 6)], dtype=np.float32) / len(ratings_i)
-#         # weights_i = p_rating_i * inversed_p_O_Y
-#         # weights_i /= weights_i.sum()
-#         # item_avgR_debiased[int(item)] = np.sum(weights_i * np.arange(1, 6))
-#         # way-2
-#         inversed_propensities_i = np.reciprocal(np.array(p_O_Y)[np.array(ratings_i, dtype=np.int32) - 1])
-#         item_avgR_debiased[int(item)] = np.sum(np.array(ratings_i) * (np.array(inversed_propensities_i) / np.sum(inversed_propensities_i)))
-#         if len(ratings_i) == 0:
-#             print(item)
-#             assert 1 == 0
-#         # print(item_avgR_debiased[int(item)])
-#         assert item_avgR_debiased[int(item)] <= 5.0001
-#         assert item_avgR_debiased[int(item)] >= 1
-#     preds = item_avgR_debiased[testset_['item_id'].values.astype(int)]
-#     print(mean_squared_error(preds, testset_['rating'], squared=False), mean_squared_error(preds, testset_['rating']), mean_absolute_error(preds, testset_['rating']), eval_RMSE_per_group(preds, testset_))
-
-#     # Avg-IPS, pop_pos
-#     item_avgR_debiased = np.zeros(num_items, dtype=np.float32)
-#     for item, group in trainset.groupby(by="item_id"):
-#         ratings_i = group['rating'].values
-#         p_rating_i = np.array([sum(ratings_i == x) for x in range(1, 6)], dtype=np.float32) / len(ratings_i)
-#         inversed_p_O_IY = np.reciprocal(p_O_IY[int(item)])
-#         weights_i = p_rating_i * inversed_p_O_IY
-#         weights_i /= weights_i.sum()
-#         item_avgR_debiased[int(item)] = np.sum(weights_i * np.arange(1, 6))
-#         if len(ratings_i) == 0:
-#             print(item)
-#             assert 1 == 0
-#         assert item_avgR_debiased[int(item)] <= 5
-#         assert item_avgR_debiased[int(item)] >= 1
-#     preds = item_avgR_debiased[testset_['item_id'].values.astype(int)]
-#     print(mean_squared_error(preds, testset_['rating'],squared=False), mean_squared_error(preds, testset_['rating']), mean_absolute_error(preds, testset_['rating']), eval_RMSE_per_group(preds,testset_))
-
-#     # Avg-IPS, mf propensity
-#     propensities = pd.read_csv('./propensities_gen_by_mf/%s.csv' % dataset_name)
-#     propensities = propensities.set_index(['user_id', 'item_id'])
-#     if dataset_name == 'yahoo':
-#         propensities['propensities'].clip(0.001, 1.0, inplace=True) # for yahoo
-#     elif dataset_name == 'coat':
-#         propensities['propensities'].clip(0.005, 1.0, inplace=True) # for coat
-#     print("Proposity clipping: [%.6f, %.6f]" % (propensities['propensities'].min(), propensities['propensities'].max()))
-#     train_propensities = propensities.loc[zip(trainset['user_id'].values, trainset['item_id'].values)]['propensities'].values
-#     trainset_ = trainset.copy()
-#     trainset_['propensity'] = train_propensities
-#     for item, group in trainset_.groupby(by="item_id"):
-#         ratings_i = group['rating'].values
-#         inversed_propensities_i = np.reciprocal(group['propensity'].values)
-#         # # way-1
-#         # p_rating_i = np.array([sum(ratings_i == x) for x in range(1, 6)], dtype=np.float32) / len(ratings_i)
-#         # inversed_propensities_i_r = np.array([sum(inversed_propensities_i[ratings_i == x]) for x in range(1, 6)], dtype=np.float32)
-#         # weights_i = p_rating_i * inversed_propensities_i_r
-#         # weights_i /= weights_i.sum()
-#         # item_avgR_debiased[int(item)] = np.sum(weights_i * np.arange(1, 6))
-#         # # way-2
-#         # print(inversed_propensities_i.dtype, ratings_i.dtype)
-#         # print((np.array(inversed_propensities_i) / np.sum(inversed_propensities_i)))
-#         item_avgR_debiased[int(item)] = np.sum(np.array(ratings_i) * (np.array(inversed_propensities_i) / np.sum(inversed_propensities_i)))
-#         if len(ratings_i) == 0:
-#             print(item)
-#             assert 1 == 0
-#         assert item_avgR_debiased[int(item)] <= 5
-#         assert item_avgR_debiased[int(item)] >= 1
-#     preds = item_avgR_debiased[testset_['item_id'].values.astype(int)]
-#     print(mean_squared_error(preds, testset_['rating'],squared=False), mean_squared_error(preds, testset_['rating']), mean_absolute_error(preds, testset_['rating']), eval_RMSE_per_group(preds,testset_))
-
-#     # Avg-test
-#     item_avgR = testset_.groupby(by='item_id')['rating'].mean()
-#     preds = item_avgR.loc[testset_['item_id'].values].values
-#     print(mean_squared_error(preds, testset_['rating'], squared=False), mean_squared_error(preds, testset_['rating']), mean_absolute_error(preds, testset_['rating']), eval_RMSE_per_group(preds, testset_))
-
-
-# p_O_I = get_popularity_bias(pd.concat([trainset, validset], ignore_index=True))
-# p_O_Y, p_Y, p_Y_O, p_O = get_positivity_bias(MCAR, pd.concat([trainset, validset], ignore_index=True))
-# if dataset_name == 'yahoo':
-#     p_O_IY = get_pos_pop_bias_updated(MCAR, pd.concat([trainset, validset], ignore_index=True), clip=(1e-4, 0.2), alpha=(5, 5)) #for yahoo
-# elif dataset_name == 'coat':
-#     p_O_IY = get_pos_pop_bias_updated(MCAR, pd.concat([trainset, validset], ignore_index=True), clip=(1e-4, 0.1), alpha=(3, 1)) #for coat
-# avg_baselines(trainset, validset, testset)
-
-# # avg_baselines(trainset, validset, testset)
-# for a1 in range(1, 11):
-#     for a2 in range(1, 11):
-#         print("alpha:", a1, a2)
-#         p_O_IY = get_pos_pop_bias_updated(MCAR, trainset, clip=(1e-4, 1.0), alpha=(a1, a2)) #@Here
-#         avg_baselines(trainset, validset, testset)
-#         print("------------ Above results on test, below on MCAR ------------")
-#         avg_baselines(trainset, validset, MCAR)
-#         print(flush=True)
-
-# for max_ in [10.0, 1.0, 0.8, 0.5, 0.2, 0.1, 0.08, 0.05, 0.02, 0.01]:
-#     print("max_:", max_)
-#     p_O_IY = get_pos_pop_bias_updated(MCAR, trainset, clip=(1e-4, max_), alpha=(3, 1))
-#     avg_baselines(trainset, validset, testset)
-#     print(flush=True)
-

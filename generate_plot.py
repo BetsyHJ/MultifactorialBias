@@ -8,17 +8,15 @@ import tueplots
 from tueplots import bundles, axes, fonts, cycler
 from tueplots.constants import markers
 from tueplots.constants.color import palettes
-matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams.update(matplotlib.rcParamsDefault)
+matplotlib.rcParams['text.usetex'] = False
 matplotlib.rcParams["font.family"] = "Times Roman"
 plot_figures_in_one_line = True
 if not plot_figures_in_one_line:
     matplotlib.rcParams['figure.figsize'] = 5.7, 4
 else:
     matplotlib.rcParams['figure.figsize'] = 10, 2
-# matplotlib.rcParams.update(cycler.cycler(color=['#7229D9', '#668CD9', '#F2B035', '#F2600C', '#D90707'], marker=markers.o_sized[1:6]))
 pl = palettes.muted[:5]
-# pl[2], pl[3] = pl[3], pl[2]
-# matplotlib.rcParams.update(cycler.cycler(color=palettes.muted[:5], marker=['o', 'v', '^', 'D', 'p']))
 matplotlib.rcParams.update(cycler.cycler(color=['#ad7021', '#e7cf94', '#eb9172', '#98d7cd', '#23867e'], marker=['o', 'v', '^', 'D', 'p']))
 matplotlib.rcParams.update({'font.size': 13})
 
@@ -38,37 +36,9 @@ def load_results(filename):
             results.append(result)
     return results
 
-# # # draw horizontal boxplot for method comparisons on semi-synthetic data.
-# method_names = ['mf_naive', 'mf_ips_pos', 'mf_ips_pop', 'mf_ips_cor']
-# out_file = "./images/sim_pos/"
-# if not os.path.exists(out_file):
-#     os.makedirs(out_file)
-
-# # slurm_ids = [659989, 659993, 659996, 660763]
-# slurm_ids = [660629, 660006, 660008, 660762] # ALS
-# results_models = [load_results(path % x) for x in slurm_ids]
-
-# for k in ['mse']:
-#     values_models = []
-#     avgs, stds = [], []
-#     for i in range(len(method_names)):
-#         results = results_models[i]
-#         results_for_k = [x[k] for x in results]
-#         values_models.append(results_for_k)
-#         avgs.append(np.mean(results_for_k))
-#         stds.append(np.std(results_for_k))
-#     plt.bar(method_names, avgs)
-#     plt.errorbar(method_names, avgs, yerr=stds, fmt='none', capsize=5, color='gray')
-#     # plt.xticks(range(1, len(method_names)+1), method_names)
-#     plt.ylabel(k.upper())
-#     plt.savefig(out_file + "bar_plot_%s_ALS.pdf" % k, bbox_inches='tight', pad_inches=0)
-#     plt.show()
-#     plt.close()
-
-
 # # draw the lineplots on synthetic data for multifactorial bias with mul_alpha varing from 0.1 to 0.9
 out_file = "./images/sim_mul/"
-path = './saved_outputs/not_sure/slurm-%d_%d.out'
+path = './slurm-%d_%d.out'
 if not os.path.exists(out_file):
     os.makedirs(out_file)
 
@@ -83,21 +53,6 @@ def ci_bootstrapping(data):
     upper_bound = np.percentile(bootstrap_means, upper_percentile)
     return lower_bound, upper_bound
 
-
-
-# def load_last_line(filename):
-#     f = open(filename, 'r')
-#     results = []
-#     line = f.readlines()[-1]
-#     assert "['RMSE_U', 'RMSE_I', 'rmse', 'mse', 'mae', 'ndcg', 'valid_loss']" in line
-#     result = {}
-#     keys = ['RMSE_U', 'RMSE_I', 'rmse', 'mse', 'mae', 'ndcg', 'valid_loss']
-#     avaliable_kid = [3, 4]
-#     avaliable_vs = line.strip().split(' ')[-14:]
-#     avaliable_vs = [x[1:-1] if "(" in x else x for x in avaliable_vs]
-#     for vid in avaliable_kid:
-#         result[keys[vid]] = (avaliable_vs[vid * 2], avaliable_vs[vid * 2 + 1])
-#     return result
 using_std_or_ci = 'ns_ci' # 'std' for standard deviation; 'ci' for confident interval, 'ns_ci' for non-symmetric CI
 print("Using", using_std_or_ci)
 keys = ['RMSE_U', 'RMSE_I', 'rmse', 'mse', 'mae', 'ndcg', 'valid_loss']
@@ -129,36 +84,23 @@ def load_results(filename):
         results_final[k] = (np.mean(v), std)
     return results_final
 
-
-
-# slurm_id, sub_ids = 710690, range(21, 66) # old one
-slurm_id, sub_ids = 728613, range(51, 96) # updated
+slurm_id, sub_ids = 38634, range(6, 51) # updated
 results_models = [[] for _ in range(5)] 
 models = ['none', 'GT', 'pos', 'pop', 'mul']
 for x in sub_ids:
-    # result_models = [load_last_line(path % (slurm_id, x)) for x in range(21, 66)]
     results_models[(x-1) % 5].append(load_results(path % (slurm_id, x)))
 # # read results for alpha1, only positivity bias
-# slurm_ids = [694666, 694667, 694669, 694672, 694673] # old
-# path = './saved_outputs/sim/slurm-%d.out'
-slurm_ids = ['729451_%d' % x for x in range(106, 111)]
-path = './saved_outputs/not_sure/slurm-%s.out'
+slurm_ids = ['38634_%d' % x for x in range(51, 56)]
+path = './slurm-%s.out'
 results_models_a1 = [[] for _ in range(5)]
 for sid, slurm_id in enumerate(slurm_ids):
     results_models_a1[sid % 5].append(load_results(path % slurm_id))
 # # read results for alpha0, only popularity bias
-# slurm_ids = ['695370_%d' % x for x in range(6, 11)]
-slurm_ids = ['729451_%d' % x for x in range(101, 106)]
-path = './saved_outputs/not_sure/slurm-%s.out'
+slurm_ids = ['38634_%d' % x for x in range(1, 6)]
+path = './slurm-%s.out'
 results_models_a0 = [[] for _ in range(5)]
 for sid, slurm_id in enumerate(slurm_ids):
     results_models_a0[sid % 5].append(load_results(path % slurm_id))
-# print(results_models)
-# for a in range(9):
-#     print("alpha:", 0.1 * (a+1))
-#     for mid, model in enumerate(models):
-#         print(" -- Method-", model, "result:", results_models[mid][a])
-#     print()
 if not plot_figures_in_one_line:
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
 else:
@@ -219,8 +161,6 @@ if plot_figures_in_one_line:
 else: 
     plt.subplots_adjust(hspace=0.1)
 
-# plt.savefig(out_file + "sim_mul_plot_%s.pdf" % metric, bbox_inches='tight', pad_inches=0)
-# print("Fig saved to", out_file + "sim_mul_plot_%s.pdf" % metric)
 plt.savefig(out_file + "sim_mul_plot.pdf", bbox_inches='tight', pad_inches=0)
 print("Fig saved to", out_file + "sim_mul_plot.pdf")
 plt.show()

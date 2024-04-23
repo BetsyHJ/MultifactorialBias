@@ -52,4 +52,4 @@
 --mul_alpha=1.0 --debiasing=GT --lr=0.0001 --reg=1e-06 --dim=16 --ALS=True
 --mul_alpha=1.0 --debiasing=positivity --lr=0.0001 --reg=0 --dim=32 --ALS=True
 --mul_alpha=1.0 --debiasing=popularity --lr=0.0001 --reg=1e-07 --dim=32 --ALS=True
---mul_alpha=1.0 --debiasing=pop_pos --lr=0.0001 --reg=1e-04 --dim=64 --ALS=True
+--mul_alpha=1.0 --debiasing=multifactorial --lr=0.0001 --reg=1e-04 --dim=64 --ALS=True

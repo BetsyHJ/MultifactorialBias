@@ -31,22 +31,8 @@ def set_hparams():
 args = set_hparams() # for multiple jobs
 
 print(os.getcwd())
-# print("$$$$$$ When learning i-related params, we use P(O|R,I); When learning u-related params, we use P(O|R) ")
-# print("$$$$$$ When learning i-related params and learning u-related params, we both use P(O|R) ")
 print("$$$$$$ When learning i-related params and learning u-related params, we both use P(O|R, I) ")
-# print("$$$$$$ When learning i-related params, we use P(O|R,I); When learning all params, we use P(O|R) ")
-# %%
-# # load original data
-# # path = "/Users/huangjin/researchWork/data/Yahoo!R3/"
-# path = "../data/yahoo/"
-# trainset = pd.read_csv(path + 'ydata-ymusic-rating-study-v1_0-train.txt', header=None, sep='\t')
-# trainset.columns = ['user_id', 'item_id', 'rating']
-# testset = pd.read_csv(path + 'ydata-ymusic-rating-study-v1_0-test.txt', header=None, sep='\t')
-# testset.columns = ['user_id', 'item_id', 'rating']
-# trainset['reward'] = (trainset['rating'] >= 4).astype(np.float32)
-# testset['reward'] = (testset['rating'] >= 4).astype(np.float32)
-# testset_ = testset.copy()
-# trainset_ = trainset.copy()
+
 
 # %%
 # # # Get 5% of MCAR testset to generate the propensities. And the remaining 95% as the testset.
@@ -171,44 +157,6 @@ def generate_transitions(trainset, behavior_policy='random', user_histories=None
     return transitions, gamma_Gt, trainset_
 
 # %%
-# # user and item id to idx
-# trainset = trainset_.copy()
-# items = list(set(trainset['item_id'].unique()) | set(testset['item_id'].unique()))
-# items2id = dict(zip(items, list(range(len(items)))))
-# pd.options.mode.chained_assignment = None  # default='warn'
-# trainset['item_id'] = trainset['item_id'].map(items2id)
-# testset['item_id'] = testset['item_id'].map(items2id)
-# items = list(range(len(items)))
-
-# users = list(set(trainset['user_id'].unique()) | set(testset['user_id'].unique()))
-# users2id = dict(zip(users, list(range(len(users)))))
-# trainset['user_id'] = trainset['user_id'].map(users2id)
-# testset['user_id'] = testset['user_id'].map(users2id)
-# users = list(range(len(users)))
-# num_items, num_users = len(items), len(users)
-
-# %%
-# trainsets, validsets = [], []
-# train_transitions_lists, valid_transitions_list = [], []
-# for trainset in [trainset.copy()]:
-#     # # transition -based train/valid spltting.
-#     selection = np.random.uniform(size=len(trainset)) <= 0.8
-#     trainset, validset = trainset[selection], trainset[~selection]
-#     # # # user-based train/valid splitting
-#     # all_train_users = trainset['user_id'].unique()
-#     # train_users = np.random.choice(all_train_users, size=int(0.8 * len(all_train_users)), replace=False)
-#     # trainset, validset = trainset[trainset['user_id'].isin(train_users)], trainset[~trainset['user_id'].isin(train_users)]
-
-#     # generate transitions for RL
-#     train_transitions, _, trainset = generate_transitions(trainset)
-#     valid_transitions, _, validset = generate_transitions(validset, user_histories=trainset)
-#     print("The numbers of training and validation set are %d and %d" % (len(train_transitions), len(valid_transitions)))
-#     trainsets.append(trainset)
-#     validsets.append(validset)
-#     train_transitions_lists.append(train_transitions)
-#     valid_transitions_list.append(valid_transitions)
-
-# %%
 dataset_name = args.dataset_name
 print("@@@@@@@@@@@ The dataset we used is", dataset_name)
 if dataset_name == 'yahoo':
@@ -278,11 +226,6 @@ def get_GT_P_O_IY(trainset, GT):
     p_O_IY_inversed = p_O_IY_inversed / p_O_IY_inversed.sum(1).reshape(-1, 1)
     p_O_IY = np.reciprocal(p_O_IY_inversed)
     return p_O_IY, p_IY_O, p_IY
-# GT = pd.concat([MCAR, testset], axis=0, ignore_index=True)
-# GT_p_O_IY, GT_p_IY_O, GT_p_IY = get_GT_P_O_IY(trainsets[0], GT)
-# p_O_IY = GT_p_O_IY
-# print("!!!!!!!!!!!!!!! Attention: Using the GT (MCAR+testset) to learn p_O_IY. Just for checking.") # @Here
-
 
 # %% [markdown]
 # The evaluation function for DQN and REINFORCE method. 
@@ -371,23 +314,6 @@ def post_processing(model, testset):
                 ndcgs.append(ndcg_score([group['reward'].values], [group['pred'].values], k=10))
             result['ndcg'] = np.mean(ndcgs)
             print(result)
-
-# @torch.no_grad()
-# def MF_validate(model, valid_ratings, valid_users, valid_items, valid_propensities=None, batch_size=512):
-#     start, total_loss = 0, 0.0
-#     if valid_propensities is not None:
-#         inversed_prop = torch.reciprocal(valid_propensities)
-#     while start < valid_ratings.shape[0]:
-#         end = start + batch_size
-#         batch_users, batch_items, batch_ratings = valid_users[start:end], valid_items[start:end], valid_ratings[start:end]
-#         loss = model.calculate_loss([batch_users, batch_items, batch_ratings])
-#         if valid_propensities is not None:
-#             loss = loss * inversed_prop[start:end] / inversed_prop.sum()
-#             total_loss += loss.sum().item()
-#         else:
-#             total_loss += loss.sum().item() / len(valid_users)
-#         start = end
-#     return total_loss
 
 # # validation: mse-ips over users
 valid_loss_over_users = False
@@ -618,18 +544,6 @@ use_wandb = False
 
 config = {'optim':'adam'}
 config.update({'debiasing':args.debiasing, 'lr':args.lr, 'reg':args.reg, 'dim':args.dim})
-# best hyperparams set for yahoo
-# config.update({'debiasing':'none', 'lr':1e-5, 'reg':1e-4, 'dim':128})
-# config.update({'debiasing':'popularity', 'lr':1e-5, 'reg':1e-4, 'dim':32})
-# config.update({'debiasing':'positivity', 'lr':1e-5, 'reg':1e-4, 'dim':32})
-# config.update({'debiasing':'pop_pos', 'lr':1e-5, 'reg':1e-4, 'dim':32})
-# config.update({'debiasing':'mf', 'lr':1e-5, 'reg':1e-4, 'dim':32})
-# best hyperparams set for coat
-# config.update({'debiasing':'none', 'lr':1e-4, 'reg':1e-3, 'dim':128})
-# config.update({'debiasing':'popularity', 'lr':1e-5, 'reg':1e-3, 'dim':128})
-# config.update({'debiasing':'positivity', 'lr':1e-5, 'reg':1e-6, 'dim':128})
-# config.update({'debiasing':'pop_pos', 'lr':1e-3, 'reg':1e-3, 'dim':128})
-# config.update({'debiasing':'mf', 'lr':1e-4, 'reg':1e-3, 'dim':32})
 
 config['plot'] = False # default False
 if config.get('plot', False):
@@ -667,10 +581,6 @@ else:
         alpha = (5, 5)
         clip = (1e-3, 0.1)
     p_O_IY = get_pos_pop_bias_updated(MCAR, pd.concat([trainset, validset], ignore_index=True), clip=clip, alpha=alpha)
-# GT = pd.concat([MCAR, testset], axis=0, ignore_index=True)
-# GT_p_O_IY, GT_p_IY_O, GT_p_IY = get_GT_P_O_IY(pd.concat([trainset, validset], ignore_index=True), GT)
-# p_O_IY = GT_p_O_IY
-# print("!!!!!!!!!!!!!!! Attention: Using the GT (MCAR+testset) to learn p_O_IY. Just for checking.") # @Here
 
 if use_wandb:
     # start a new wandb run to track this script
