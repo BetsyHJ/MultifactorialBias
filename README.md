@@ -76,7 +76,7 @@ $ python mf-concurrent.py --dataset_name coat --CF_model VAE --debiasing none --
 ```
 
 ## Reproducing Experiments on Synthetic Data
-We further perform an extensive simulation-based experimental analysis where the effect of each of the two factors is varied and answer the research question: (RQ3) Can our multifactorial method MF-IPS $^{Mul}$ robustly mitigate the effect of selection bias in scenarios where the effect of two factors on bias is varied?
+We further perform an extensive simulation-based experimental analysis where the effect of each of the two factors is varied and answer the research question: Can our multifactorial method MF-IPS $^{Mul}$ robustly mitigate the effect of selection bias in scenarios where the effect of two factors on bias is varied?
 
 Our simulated multifactorial propensity is then simply a linear interpolation between $\rho^{(\text{R})}$ which is only dependent on the rating values, and $\rho^{(\text{I})}$ which is only dependent on the items: $$P(o=1 \mid y=r, i) = \gamma \rho^{(\text{R})}_r + (1 - \gamma) \rho^{(\text{I})}_i,$$
 where $\gamma \in [0, 1]$ controls the effect of each factor on the selection bias.
