@@ -22,9 +22,9 @@ $ conda activate Multifactorial
 ```
 
 ## Reproducing Experiments on Real-world Data
-Our experimental analysis on real-world datasets aims to answer
-two research questions.
-<!-- ### RQ1: Does our multifactorial method better mitigate the effect of bias than existing single-factor debiasing methods? -->
+Our experimental analysis is conducted on real-world datasets: the Yahoo!R3 and Coat datasets. The preprocessed data can be found [here](https://drive.google.com/file/d/1jg9BE7ZoR4ehXifNeaEJx5AVNYRANnr6/view?usp=sharing). Please download it, unzip it, and then move the obtained folders ```./data``` and ```./propensities_gen_by_mf``` to the main directory of the project.
+
+
 
 ### Concurrent optimization
 Reproducing the results of methods - MF, MF-IPS $^{Pop}$, MF-IPS $^{Pos}$, MF-IPS $^{MF}$, and MF-IPS $^{Mul}$ optimized by the concurrent gradient descent method, \
