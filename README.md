@@ -1,5 +1,5 @@
 # MultifactorialBias
-This repository contains the code used for the experiments in ["Going Beyond Popularity and Positivity Bias: Correcting for Multifactorial Bias in Recommender Systems"](https:/?).
+This repository contains the code used for the experiments in ["Going Beyond Popularity and Positivity Bias: Correcting for Multifactorial Bias in Recommender Systems"](https://doi.org/10.1145/3626772.3657749).
 
 ## Citation
 If you use this code to produce results for your scientific publication, or if you share a copy or fork, please refer to our SIGIR 2024 paper:
